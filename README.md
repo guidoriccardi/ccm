@@ -21,10 +21,10 @@
 2. Usage example:
 
    ```python
-   from ccm import track_cpu_continuous
+   from ccm import tracker_cpu
    import time
 
-   @track_cpu_continuous(log_file="log.csv")
+   @tracker_cpu(log_file="log.csv")
    def my_function():
        for _ in range(5):
            sum(i*i for i in range(10**6))
