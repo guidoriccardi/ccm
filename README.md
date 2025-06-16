@@ -41,9 +41,9 @@
 
 ## 📄 CSV Output Format
 
-| wall_time_sec | avg_cpu_percent | energy_joule | energy_wh | co2_eq_kg | co2_eq_g | n_samples |
-|---------------|------------------|--------------|------------|-----------|----------|-----------|
-| 5.02          | 32.5             | 10.1         | 0.0028     | 0.00078   | 0.78     | 11        |
+| wall_time_sec | avg_cpu_percent | energy_joule | energy_wh | co2_eq_g | n_samples |
+|---------------|------------------|--------------|------------|-----------|-----------|
+| 5.02          | 32.5             | 10.1         | 0.0028     | 0.00078   | 11        |
 
 ## 📎 Customizable Parameters
 
