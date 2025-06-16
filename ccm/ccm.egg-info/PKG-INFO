@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: ccm
+Version: 0.1
+Summary: CPU usage and CO2 emission tracker decorator
+Author: Guido Riccardi
+Requires-Python: >=3.6
+Requires-Dist: psutil
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

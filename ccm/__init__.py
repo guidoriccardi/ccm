@@ -1,1 +1,1 @@
-from .tracker import track_cpu_continuous
+from .tracker import tracker_cpu
