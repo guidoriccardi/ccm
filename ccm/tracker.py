@@ -20,7 +20,7 @@ def get_total_cpu_time():
 def tracker_cpu(
     log_file="cpu_log_continuous.csv",
     cpu_max_power_watt=62,
-    emission_factor_italy=0.28,
+    emission_factor_italy=0.00028,
     sample_interval=0.5
 ):
     def decorator(func):
@@ -61,19 +61,19 @@ def tracker_cpu(
             wall_time = wall_end - wall_start
             energy_joule = (cpu_max_power_watt * (avg_cpu_percent / 100)) * wall_time
             energy_wh = energy_joule / 3600
-            co2_kg = energy_wh * emission_factor_italy
-            co2_g = co2_kg * 1000
+            co2_g = energy_wh * emission_factor_italy
+            co2_g = co2_g * 1000
 
             os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
             with open(log_file, mode='w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow([
-                    "wall_time_sec", "avg_cpu_percent", "energy_joule", "energy_wh", "co2_eq_kg", "co2_eq_g", "n_samples"
+                    "wall_time_sec", "avg_cpu_percent", "energy_joule", "energy_wh", "co2_eq_g", "n_samples"
                 ])
                 writer.writerow([
                     round(wall_time, 2), round(avg_cpu_percent, 2), round(energy_joule, 2),
-                    round(energy_wh, 6), round(co2_kg, 6), round(co2_g, 2), len(cpu_samples)
+                    round(energy_wh, 6), round(co2_g, 6), len(cpu_samples)
                 ])
 
             return result
