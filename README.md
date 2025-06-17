@@ -13,24 +13,20 @@
 
 ## 🚀 How to Use
 
-1. Install the package locally:
-   ```bash
-   pip install .
-   ```
+1. Clone the repo
 
 2. Usage example:
 
    ```python
-   from ccm import tracker_cpu
-   import time
+   tracker = Tracker(log_file="cpu_gpu_log.csv", gpu_id=0)
 
-   @tracker_cpu(log_file="log.csv")
+   @tracker.track_cpu_gpu
    def my_function():
-       for _ in range(5):
-           sum(i*i for i in range(10**6))
-           time.sleep(1)
+      # Codice da eseguire
+      pass
 
    my_function()
+
    ```
 
 3. After execution, a CSV file is generated containing:
@@ -41,9 +37,9 @@
 
 ## 📄 CSV Output Format
 
-| wall_time_sec | avg_cpu_percent | energy_joule | energy_wh | co2_eq_kg | co2_eq_g | n_samples |
-|---------------|------------------|--------------|------------|-----------|----------|-----------|
-| 5.02          | 32.5             | 10.1         | 0.0028     | 0.00078   | 0.78     | 11        |
+| wall_time_sec | avg_cpu_percent | energy_joule | energy_wh | co2_eq_g | n_samples |
+|---------------|------------------|--------------|------------|-----------|-----------|
+| 5.02          | 32.5             | 10.1         | 0.0028     | 0.00078   | 11        |
 
 ## 📎 Customizable Parameters
 
