@@ -8,13 +8,14 @@ import subprocess
 
 CLK_TCK = os.sysconf(os.sysconf_names['SC_CLK_TCK'])
 
-class Tracker:
+class Co2_Tracker:
     def __init__(self, log_file="cpu_gpu_log_continuous.csv", gpu_id=0, cpu_max_power_watt=62, emission_factor_italy=0.00028, sample_interval=0.5):
         self.log_file = log_file
         self.gpu_id = gpu_id
         self.cpu_max_power_watt = cpu_max_power_watt
         self.emission_factor_italy = emission_factor_italy
         self.sample_interval = sample_interval
+        
 
     # Funzione per monitorare la CPU
     def get_process_cpu_time(self, process):
@@ -28,14 +29,20 @@ class Tracker:
         return sum(fields) / CLK_TCK
 
     # Funzione per monitorare la GPU
+    # Ottiene informazioni sulla GPU utilizzando nvidia-smi.
     def get_gpu_info(self, gpu_id=0):
-        try:
-            cmd = f"nvidia-smi --id={gpu_id} --query-gpu=utilization.gpu,memory.used,memory.total,power.draw,temperature.gpu --format=csv,noheader,nounits"
-            result = subprocess.check_output(cmd, shell=True).decode('utf-8').strip()
-            utilization, memory_used, memory_total, power, temperature = map(float, result.split(', '))
-            return utilization, memory_used, memory_total, power, temperature
-        except subprocess.CalledProcessError:
-            return None
+            """
+            Ottiene informazioni sulla GPU utilizzando nvidia-smi.
+            """
+            try:
+                # Esegui il comando nvidia-smi per raccogliere l'uso della GPU
+                cmd = f"nvidia-smi --id={gpu_id} --query-gpu=power.draw --format=csv,noheader,nounits"
+                result = subprocess.check_output(cmd, shell=True).decode('utf-8').strip()
+                power = float(result)  # La potenza in watt
+                return power
+            except subprocess.CalledProcessError:
+                print(f"Errore nel comando nvidia-smi per la GPU {gpu_id}")
+                return None
 
     # Metodo per tracciare la CPU
     def track_cpu(self, func):
@@ -95,60 +102,72 @@ class Tracker:
         return wrapper
 
     # Metodo per tracciare la GPU
-    def track_gpu(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            gpu_samples = []
-            stop_flag = threading.Event()
+    def track_gpu(self, log_file=None, gpu_id=None, sample_interval=None):
+            """
+            Traccia il consumo della GPU in termini di energia (Wh) e CO2 emessa.
+            """
+            if log_file is None:
+                log_file = self.log_file
+            if gpu_id is None:
+                gpu_id = self.gpu_id
+            if sample_interval is None:
+                sample_interval = self.sample_interval
+            
+            def decorator(func):
+                @wraps(func)
+                def wrapper(*args, **kwargs):
+                    total_power_watt = 0  # Variabile per accumulare il consumo di potenza in watt
+                    stop_flag = threading.Event()
 
-            def gpu_sampler():
-                while not stop_flag.is_set():
-                    gpu_info = self.get_gpu_info(self.gpu_id)
-                    if gpu_info:
-                        timestamp = time.time()
-                        gpu_samples.append((timestamp, *gpu_info))
-                    time.sleep(self.sample_interval)
+                    # Funzione per raccogliere i dati sulla potenza della GPU
+                    def sampler():
+                        nonlocal total_power_watt
+                        while not stop_flag.is_set():
+                            power = self.get_gpu_info(gpu_id)
+                            if power is not None:
+                                total_power_watt += power  # Somma la potenza in watt
+                            time.sleep(sample_interval)
 
-            thread = threading.Thread(target=gpu_sampler)
-            thread.start()
+                    # Avvia il thread che raccoglie i dati sulla potenza della GPU
+                    thread = threading.Thread(target=sampler)
+                    thread.start()
 
-            wall_start = time.time()
-            result = func(*args, **kwargs)
-            wall_end = time.time()
+                    # Esegui la funzione decorata
+                    wall_start = time.time()
+                    result = func(*args, **kwargs)
+                    wall_end = time.time()
 
-            stop_flag.set()
-            thread.join()
+                    # Ferma il thread di campionamento
+                    stop_flag.set()
+                    thread.join()
 
-            gpu_utilization_percents = []
-            for i in range(1, len(gpu_samples)):
-                t0, util0, mem_used0, mem_total0, power0, temp0 = gpu_samples[i - 1]
-                t1, util1, mem_used1, mem_total1, power1, temp1 = gpu_samples[i]
-                delta_util = util1 - util0
-                if mem_total0 > 0:
-                    gpu_utilization_percents.append(delta_util)
+                    # Calcolare l'energia consumata in Wh
+                    total_energy_wh = total_power_watt * (wall_end - wall_start) / 3600  # Converti watt * secondi a wattora (Wh)
+                    total_energy_joule = total_energy_wh * 3600  # Converti in Joule
 
-            avg_gpu_percent = sum(gpu_utilization_percents) / len(gpu_utilization_percents) if gpu_utilization_percents else 0.0
+                    # Calcolare le emissioni di CO2 (in grammi)
+                    co2_g = total_energy_wh * self.emission_factor_italy * 1000  # CO2 in grammi
 
-            wall_time = wall_end - wall_start
-            energy_joule = (self.cpu_max_power_watt * (avg_gpu_percent / 100)) * wall_time  # Se vuoi calcolare energia simile alla CPU
-            energy_wh = energy_joule / 3600
-            co2_g = energy_wh * self.emission_factor_italy
-            co2_g = co2_g * 1000
+                    # Scrivi i dati nel file CSV
+                    os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-            os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
+                    with open(log_file, mode='a', newline='') as file:
+                        writer = csv.writer(file)
+                        # Scrivi l'intestazione nel CSV se è la prima volta che si scrive
+                        writer.writerow([
+                            "wall_time_sec", "total_energy_wh", "total_energy_joule", "co2_eq_g", "n_samples"
+                        ])
+                        # Scrivi i dati raccolti
+                        writer.writerow([
+                            round(wall_end - wall_start, 2), round(total_energy_wh, 6), round(total_energy_joule, 2),
+                            round(co2_g, 6), len(args)
+                        ])
 
-            with open(self.log_file, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow([
-                    "wall_time_sec", "avg_gpu_percent", "energy_joule", "energy_wh", "co2_eq_g", "n_samples"
-                ])
-                writer.writerow([
-                    round(wall_time, 2), round(avg_gpu_percent, 2), round(energy_joule, 2),
-                    round(energy_wh, 6), round(co2_g, 6), len(gpu_samples)
-                ])
+                    return result
+                return wrapper
+            return decorator
 
-            return result
-        return wrapper
+
 
     # Metodo combinato per CPU e GPU
     def track_cpu_gpu(self, func):
