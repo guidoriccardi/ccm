@@ -55,7 +55,7 @@ The CSV file generated will contain the following columns:
 - **`log_file`**: Path to the output CSV file (default: `"cpu_gpu_log_continuous.csv"`).
 - **`gpu_id`**: The ID of the GPU to track (default: `0`).
 - **`cpu_max_power_watt`**: Estimated maximum CPU power consumption in watts (default: `62 W`).
-- **`emission_factor_italy`**: CO₂ emission factor for Italy in kg per Wh (default: `0.00028`).
+- **`emission_factor`**: CO₂ emission factor for Italy in kg per Wh (default: `0.00028`).
 - **`sample_interval`**: The interval in seconds for sampling CPU and GPU power data (default: `0.5`).
 
 ## 🚀 How the Tracker Works

@@ -9,11 +9,11 @@ import subprocess
 CLK_TCK = os.sysconf(os.sysconf_names['SC_CLK_TCK'])
 
 class Co2_Tracker:
-    def __init__(self, log_file="cpu_gpu_log_continuous.csv", gpu_id=0, cpu_max_power_watt=62, emission_factor_italy=0.00028, sample_interval=0.5):
+    def __init__(self, log_file="cpu_gpu_log_continuous.csv", gpu_id=0, cpu_max_power_watt=62, emission_factor=0.00028, sample_interval=0.5):
         self.log_file = log_file
         self.gpu_id = gpu_id
         self.cpu_max_power_watt = cpu_max_power_watt
-        self.emission_factor_italy = emission_factor_italy
+        self.emission_factor = emission_factor
         self.sample_interval = sample_interval
         
 
@@ -83,7 +83,7 @@ class Co2_Tracker:
             wall_time = wall_end - wall_start
             energy_joule = (self.cpu_max_power_watt * (avg_cpu_percent / 100)) * wall_time
             energy_wh = energy_joule / 3600
-            co2_g = energy_wh * self.emission_factor_italy
+            co2_g = energy_wh * self.emission_factor
             co2_g = co2_g * 1000
 
             os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
@@ -127,19 +127,19 @@ class Co2_Tracker:
             stop_flag.set()
             thread.join()
 
-            # Calcolare la potenza media
+            # Calcolo della potenza media
             avg_gpu_power = 0.0
             if gpu_samples:
                 total_power = sum([sample[1] for sample in gpu_samples])
                 avg_gpu_power = total_power / len(gpu_samples)
 
-            # Calcolare l'energia consumata in Wh
+            # Calcolo dell'energia consumata in Wh
             wall_time = wall_end - wall_start
             energy_joule = avg_gpu_power * wall_time  # Energia in joule (potenza media * tempo)
             energy_wh = energy_joule / 3600  # Conversione in wattora (Wh)
 
-            # Calcolare le emissioni di CO2
-            co2_g = energy_wh * self.emission_factor_italy * 1000  # Emissioni in grammi di CO2
+            # Calcolo delle emissioni di CO2
+            co2_g = energy_wh * self.emission_factor * 1000  # Emissioni in grammi di CO2
 
             # Creazione della cartella di log se non esiste
             os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
@@ -199,7 +199,7 @@ class Co2_Tracker:
             cpu_thread.join()
             gpu_thread.join()
 
-            # Calcolare la potenza media della CPU
+            # Calcolo della potenza media della CPU
             cpu_percents = []
             for i in range(1, len(cpu_samples)):
                 t0, p0, sys0 = cpu_samples[i - 1]
@@ -211,13 +211,13 @@ class Co2_Tracker:
 
             avg_cpu_percent = sum(cpu_percents) / len(cpu_percents) if cpu_percents else 0.0
 
-            # Calcolare la potenza media della GPU
+            # Calcolo della potenza media della GPU
             avg_gpu_power = 0.0
             if gpu_samples:
                 total_power = sum([sample[1] for sample in gpu_samples])
                 avg_gpu_power = total_power / len(gpu_samples)
 
-            # Calcolare l'energia consumata in Wh per la CPU e la GPU
+            # Calcolo dell'energia consumata in Wh per la CPU e la GPU
             cpu_wall_time = wall_end - wall_start
             energy_joule_cpu = (self.cpu_max_power_watt * (avg_cpu_percent / 100)) * cpu_wall_time
             energy_wh_cpu = energy_joule_cpu / 3600  # Conversione in wattora (Wh)
@@ -225,10 +225,14 @@ class Co2_Tracker:
             energy_joule_gpu = avg_gpu_power * cpu_wall_time  # Energia in joule per la GPU
             energy_wh_gpu = energy_joule_gpu / 3600  # Conversione in wattora (Wh)
 
-            # Calcolare le emissioni di CO2 per la CPU e la GPU
-            co2_g_cpu = energy_wh_cpu * self.emission_factor_italy * 1000
-            co2_g_gpu = energy_wh_gpu * self.emission_factor_italy * 1000
+            # Calcolo dele emissioni di CO2 per la CPU e la GPU
+            co2_g_cpu = energy_wh_cpu * self.emission_factor * 1000
+            co2_g_gpu = energy_wh_gpu * self.emission_factor * 1000
 
+            # Calcolo delle emissioni totali di CO2 e dell'energia totale
+            total_co2_g = co2_g_cpu + co2_g_gpu
+            total_energy_wh = energy_wh_cpu + energy_wh_gpu
+            total_energy_joule = energy_joule_cpu + energy_joule_gpu
             # Creazione della cartella di log se non esiste
             os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
 
@@ -237,12 +241,13 @@ class Co2_Tracker:
                 writer = csv.writer(file)
                 writer.writerow([
                     "wall_time_sec", "avg_cpu_percent", "avg_gpu_power", "energy_joule_cpu", "energy_wh_cpu", "co2_eq_g_cpu",
-                    "energy_joule_gpu", "energy_wh_gpu", "co2_eq_g_gpu", "n_samples_cpu", "n_samples_gpu"
+                    "energy_joule_gpu", "energy_wh_gpu", "co2_eq_g_gpu", "total_wh","total_g_co2", "n_samples_cpu", "n_samples_gpu"
                 ])
                 writer.writerow([
                     round(wall_end - wall_start, 2), round(avg_cpu_percent, 2), round(avg_gpu_power, 2),
                     round(energy_joule_cpu, 2), round(energy_wh_cpu, 6), round(co2_g_cpu, 6),
-                    round(energy_joule_gpu, 2), round(energy_wh_gpu, 6), round(co2_g_gpu, 6),
+                    round(energy_joule_gpu, 2), round(energy_wh_gpu, 6), round(co2_g_gpu, 6), round(total_energy_wh, 6),
+                    round(total_co2_g, 6),
                     len(cpu_samples), len(gpu_samples)
                 ])
 
