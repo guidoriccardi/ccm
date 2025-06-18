@@ -1,6 +1,0 @@
-setup.py
-ccm.egg-info/PKG-INFO
-ccm.egg-info/SOURCES.txt
-ccm.egg-info/dependency_links.txt
-ccm.egg-info/requires.txt
-ccm.egg-info/top_level.txt
