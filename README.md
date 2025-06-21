@@ -3,7 +3,7 @@
 
 **CCM** is a Python decorator that tracks **CPU usage**, **GPU power consumption**, estimates **energy consumption**, and **CO₂ emissions** during the execution of a Python function. It is designed for **Linux environments** and **does not depend on RAPL**.
 
-## 🔧 Requirements
+## Requirements
 
 - Python 3.6+
 - Linux operating system
@@ -14,7 +14,7 @@
 
 - `nvidia-smi` should be installed and accessible in the system's PATH for GPU monitoring.
 
-## 🚀 How to Use
+## How to Use
 
 1. **Clone the repository** or copy the code into your project.
 
@@ -42,7 +42,7 @@
    - **average GPU power consumption** (Watts),
    - **samples collected** for both CPU and GPU.
 
-## 📄 CSV Output Format
+## CSV Output Format
 
 The CSV file generated will contain the following columns:
 
@@ -50,7 +50,7 @@ The CSV file generated will contain the following columns:
 |---------------|------------------|---------------|------------------|---------------|--------------|------------------|---------------|--------------|---------------|---------------|
 | 5.02          | 32.5             | 85.0          | 10.1             | 0.0028        | 0.00078      | 2.1              | 0.00058       | 0.00016      | 11            | 15            |
 
-## 📎 Customizable Parameters
+## Customizable Parameters
 
 - **`log_file`**: Path to the output CSV file (default: `"cpu_gpu_log_continuous.csv"`).
 - **`gpu_id`**: The ID of the GPU to track (default: `0`).
@@ -58,7 +58,7 @@ The CSV file generated will contain the following columns:
 - **`emission_factor`**: CO₂ emission factor for Italy in kg per Wh (default: `0.00028`).
 - **`sample_interval`**: The interval in seconds for sampling CPU and GPU power data (default: `0.5`).
 
-## 🚀 How the Tracker Works
+## How the Tracker Works
 
 1. **CPU Monitoring**: Tracks the CPU usage using the `psutil` library. It calculates the average CPU usage percentage by comparing the process CPU time with the total system CPU time during the function execution.
 
@@ -66,7 +66,7 @@ The CSV file generated will contain the following columns:
 
 3. **Energy and CO₂ Calculation**: The energy consumption for both the CPU and GPU is calculated based on the average power usage and execution time. CO₂ emissions are estimated using the given emission factor (kg/Wh).
 
-## 📋 Example Output CSV
+## Example Output CSV
 
 An example of the output CSV generated after the function execution could look like this:
 
@@ -87,11 +87,11 @@ wall_time_sec, avg_cpu_percent, avg_gpu_power, energy_joule_cpu, energy_wh_cpu, 
 - **n_samples_cpu**: Number of CPU samples collected.
 - **n_samples_gpu**: Number of GPU samples collected.
 
-## 📌 Notes
+## Notes
 
 - **GPU Monitoring**: The `nvidia-smi` command is required for GPU power consumption tracking. Ensure that your system has `nvidia-smi` available and your GPU is supported.
 - **Power Consumption Estimation**: The power consumption of the CPU is estimated based on the `cpu_max_power_watt` parameter. This value is adjustable based on the CPU model and specifications.
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
